@@ -1,0 +1,243 @@
+=head1 NAME
+
+constant::more - constants overriding from the command line
+
+=head1 SYNOPSIS
+
+Direct alternative to C<use constant>:
+
+	use constant::more PI    => 4 * atan2(1, 1);
+	use constant:more DEBUG => 0;
+
+	print "Pi equals ", PI, "...\n" if DEBUG;
+
+	use constant::more {
+	    SEC   => 0,
+	    MIN   => 1,
+	    HOUR  => 2,
+	    MDAY  => 3,
+	    MON   => 4,
+	    YEAR  => 5,
+	    WDAY  => 6,
+	    YDAY  => 7,
+	    ISDST => 8,
+	};
+
+
+Parse arguments using L<Getopt::Long> and environment variables to set values
+to constants declared in your code
+
+	# ###
+	# example.pl
+
+	use constant::more {
+		FEATURE_A_ENABLED=>{		#Name of the constant
+			value=>0,		#default value 
+			option=>"feature1",	#Getopt::Long option specification
+			env=>"MY_APP_FEATURE_A"	#Environment variable copy value from 
+		},
+
+		FEATURE_B_CONFIG=>{
+			value=>"disabled",
+			option=>"feature2=s",	#Getopt::Long format
+		}
+	};
+
+	
+	if(FEATURE_A_ENABLED){
+		#Do interesting things here
+		print "Feature a is enabled
+	}
+	
+	print "Feature b config is: ".FEATURE_B_CONFIG."\n";
+
+	__END__
+
+	#######
+
+	# From command line
+	perl example.pl --feature1  --feature2=active
+	
+
+	# ####
+	# output
+
+	Feature a is enabled
+	Feature b config is: active
+	
+
+
+=head1 DESCRIPTION
+
+Performs the similar tasks as C<use constant>, but adds the facility to set
+declared constants in your code with values from the command line or
+environment variables, which C<constant> does not support.
+
+In its simplest form, defining an constant is just like C<constant> pragma:
+
+	use constant::more NAME=>"value";	#Set a single constant
+		
+	use constant::more {			#Set multiple constants
+			NAME=>"value",
+			ANOTHER=>"one",
+	};
+
+In its full form, an annonyous hash containing keys C<value>, C<option>,
+C<env> and C<force> flag  is used to setup the processing of a constant.
+
+
+
+	use constant::more {
+		MY_NAME=>{
+			value=>"john",
+			option=>"name=s",
+			env=>"ENV_VAR_NAME",
+			force=>1,
+		},
+		ANOTHER=>{
+			value=>"one",
+		}
+	};
+
+
+=head1 MOTIVATION/EXAMPLES
+
+I use the C<constant> and C<enum> pragma alot for unchanging values in my code. However, i would like to have the flexibility to configure constants at program start to enable debuging for example.
+
+It is quite common to see something like this:
+
+	package My::Complex::Package
+
+	use constant DEBUG=>$ENV{"my_complex_package_debug"}//0;
+
+	if(DEBUG){
+		warn "debugging";
+	}
+
+This enables debug code using an evironment variable.
+
+
+
+A common wa
+
+Recently I needed a mechanism to
+define flags to enable/disable things like logging and OS specific sub routine
+calls throught a project. I could do this by manually adding explicit C<%ENV> processing
+in various modules, but I thought this might be a better approach.
+
+This module allows modules to declare constants/config in sub moudles, yet the
+definition be controlled at a higher level and optionally from the command line or
+environment.
+
+=head2 Example: Disable/Enable Logging
+
+
+For example, to completely disable logging (ie. have no runtime overhead),
+regardless of logging system:
+
+
+	# In sub module, setup config option supported, with a default v
+
+	package MY::PACKAGE;
+
+	use constant::more {
+			CONFIG::LOG=>{
+				value=>0,
+			}
+	};
+
+	sub do_stuff{
+		CONFIG::LOG and call_your_logging_function();
+	}
+
+
+	# In top level file
+	# 
+	use constant::more {
+			CONFIG::LOG=>{
+				value=>0,
+				option=>"log=i"
+			}
+	};
+
+
+	MY::PACKAGE::do_stuff();
+
+
+	#From the command line
+
+	perl example.pl --log=1
+	
+The namespace C<CONFIG> is just one I picked, but can be what ever you like
+	
+			
+=head2 Example: Avoiding syscalls 
+
+The C<$^O> variable indicating what os your program is running on isn't a constant. To avoid run time evaluations of this value, (because normally your OS doesn't change...) make a constant. This example demonstrates optimising for an OS
+
+	use constant::more {
+			DARWIN	=>$^O=~/darwin/i,
+			LINUX	=>$^O=~/linux/i,
+			BSD	=>$^O=~/bsd/i,
+	};
+
+	#accept a socket
+		{
+
+			if(OS::Darwin){
+				#no kernel level load balancing so multiprocess server	
+				#
+			}
+			elsif(OS::Linux){
+				setsocketopt ... #set nonblocking flag as it isn't inheritted in linux
+			}
+
+
+=head1 USAGE
+
+The general form of usage is showin in the Disccusion section. However here are the fine details
+
+=over
+
+=item Constants are defined in callers name space unless name includes a package in the name
+
+A name with '::' in it is classed as a full name for a variable. Use this to
+declare constants in a common namespace (ie CONFIG for example)
+
+
+=item Constants are only defined if they don't exist already
+
+This makes configuring constants in sub moudles possible. The module can specify a default value, if it hasnt been been defined by the top level application. This is why it is important to C<use constant::more> at the start of your file.
+
+Generally C<use constant::more> should be the first C<use> line in your file, before importing
+
+If you really want to redefine the constant specify the C<force> option
+
+
+=item Precedence of constant value is code, envrionment then command option
+
+This means the value (default) specified in code will be only used if no
+environment variable or command option is applicable.
+
+If a command option is provided and a environment variable is available, the
+command option will be used
+
+
+=back
+
+
+=head1 BUGS
+
+=head1 REPOSITORY
+
+=head1 LICENSE
+
+=head1 AUTHOR
+
+=head1 RELATED MODULES
+
+L<Getopt::constant>
+
+=head1 COPYRIGHT
+
+
