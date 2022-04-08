@@ -1,6 +1,12 @@
 Changes
+examples/log-level.pl
+examples/log4perl.pl
+examples/log_ger.pl
+lib/constant/more.pm
+lib/constant/more.pod
 Makefile.PL
 MANIFEST
+MANIFEST.SKIP
 README
-t/Dandy.t
-lib/Dandy.pm
+README.md
+t/00-constant-more.t
