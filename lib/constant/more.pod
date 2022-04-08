@@ -1,10 +1,10 @@
 =head1 NAME
 
-constant::more - constants overriding from the command line
+constant::more - Define constants from the command line
 
 =head1 SYNOPSIS
 
-Direct alternative to C<use constant>:
+Can use as a direct alternative to C<use constant>:
 
 	use constant::more PI    => 4 * atan2(1, 1);
 	use constant:more DEBUG => 0;
@@ -70,39 +70,16 @@ to constants declared in your code
 =head1 DESCRIPTION
 
 Performs the similar tasks as C<use constant>, but adds the facility to set
-declared constants in your code with values from the command line or
-environment variables, which C<constant> does not support.
-
-In its simplest form, defining an constant is just like C<constant> pragma:
-
-	use constant::more NAME=>"value";	#Set a single constant
-		
-	use constant::more {			#Set multiple constants
-			NAME=>"value",
-			ANOTHER=>"one",
-	};
-
-In its full form, an annonyous hash containing keys C<value>, C<option>,
-C<env> and C<force> flag  is used to setup the processing of a constant.
+the value of declared constants with values from the command line or
+environment variables.
 
 
 
-	use constant::more {
-		MY_NAME=>{
-			value=>"john",
-			option=>"name=s",
-			env=>"ENV_VAR_NAME",
-			force=>1,
-		},
-		ANOTHER=>{
-			value=>"one",
-		}
-	};
+=head1 MOTIVATION
 
-
-=head1 MOTIVATION/EXAMPLES
-
-I use the C<constant> and C<enum> pragma alot for unchanging values in my code. However, i would like to have the flexibility to configure constants at program start to enable debuging for example.
+I use the C<constant> and C<enum> pragma alot for unchanging values in my code.
+However, I would like to have the flexibility to configure constants at program
+start to enable debuging for example.
 
 It is quite common to see something like this:
 
@@ -114,107 +91,53 @@ It is quite common to see something like this:
 		warn "debugging";
 	}
 
-This enables debug code using an evironment variable.
-
-
-
-A common wa
-
-Recently I needed a mechanism to
-define flags to enable/disable things like logging and OS specific sub routine
-calls throught a project. I could do this by manually adding explicit C<%ENV> processing
-in various modules, but I thought this might be a better approach.
-
-This module allows modules to declare constants/config in sub moudles, yet the
-definition be controlled at a higher level and optionally from the command line or
-environment.
-
-=head2 Example: Disable/Enable Logging
-
-
-For example, to completely disable logging (ie. have no runtime overhead),
-regardless of logging system:
-
-
-	# In sub module, setup config option supported, with a default v
-
-	package MY::PACKAGE;
-
-	use constant::more {
-			CONFIG::LOG=>{
-				value=>0,
-			}
-	};
-
-	sub do_stuff{
-		CONFIG::LOG and call_your_logging_function();
-	}
-
-
-	# In top level file
-	# 
-	use constant::more {
-			CONFIG::LOG=>{
-				value=>0,
-				option=>"log=i"
-			}
-	};
-
-
-	MY::PACKAGE::do_stuff();
-
-
-	#From the command line
-
-	perl example.pl --log=1
-	
-The namespace C<CONFIG> is just one I picked, but can be what ever you like
-	
-			
-=head2 Example: Avoiding syscalls 
-
-The C<$^O> variable indicating what os your program is running on isn't a constant. To avoid run time evaluations of this value, (because normally your OS doesn't change...) make a constant. This example demonstrates optimising for an OS
-
-	use constant::more {
-			DARWIN	=>$^O=~/darwin/i,
-			LINUX	=>$^O=~/linux/i,
-			BSD	=>$^O=~/bsd/i,
-	};
-
-	#accept a socket
-		{
-
-			if(OS::Darwin){
-				#no kernel level load balancing so multiprocess server	
-				#
-			}
-			elsif(OS::Linux){
-				setsocketopt ... #set nonblocking flag as it isn't inheritted in linux
-			}
+This enables debug code using an evironment variable. This module implements a
+similar idea but can use command line options using L<GetOpt::Long>
 
 
 =head1 USAGE
 
+=head2 Simple Form
+
+In its simplest form, defining an constant is just like the C<use constant> pragma:
+
+	use constant::more NAME=>"value";	#Set a single constant
+		
+	use constant::more {			#Set multiple constants
+			NAME=>"value",
+			ANOTHER=>"one",
+	};
+
+=head2 Normal Form
+
+In its full form, an annonyous hash containing keys C<val>, C<opt>, C<env> and
+C<sub> are used to setup the processing of a constant:
+
+	use constant::more {
+		MY_NAME=>{
+			val=>"john",
+			opt=>"name=s",
+			env=>"ENV_VAR_NAME",
+		},
+		ANOTHER=>{
+			value=>"one",
+		}
+	};
+
+
 The general form of usage is showin in the Disccusion section. However here are the fine details
 
-=over
-
-=item Constants are defined in callers name space unless name includes a package in the name
-
+Constants are defined in callers name space unless name includes a package in the name
 A name with '::' in it is classed as a full name for a variable. Use this to
 declare constants in a common namespace (ie CONFIG for example)
 
-
-=item Constants are only defined if they don't exist already
-
-This makes configuring constants in sub moudles possible. The module can specify a default value, if it hasnt been been defined by the top level application. This is why it is important to C<use constant::more> at the start of your file.
-
-Generally C<use constant::more> should be the first C<use> line in your file, before importing
-
-If you really want to redefine the constant specify the C<force> option
+Constants are only defined/set if they don't exist already.This makes
+configuring constants in sub moudles possible. The module can specify a default
+value, if it hasn't been been defined by the top level application. This is why
+it is important to C<use constant::more> at the start of your file.
 
 
-=item Precedence of constant value is code, envrionment then command option
+Precedence of constant value is code, envrionment then command option
 
 This means the value (default) specified in code will be only used if no
 environment variable or command option is applicable.
@@ -223,7 +146,18 @@ If a command option is provided and a environment variable is available, the
 command option will be used
 
 
-=back
+=head2 Advanced Form
+
+If the child, annonymous hash contains the key C<sub>, then the return list of
+the the subroutine will be used as key value pairs of contant names and values
+to genereate. This sub is called with a key, value pair from the default
+setting, command line processing or evironment variable.
+
+The first input argument is the name of the command line option, or undef if
+default or environment variable.  The second argument is the value from the
+command line option, default or environment variable.
+
+
 
 
 =head1 BUGS

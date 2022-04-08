@@ -8,10 +8,6 @@ use feature qw<refaliasing state>;
 no warnings "experimental";
 use List::Util qw<pairs>;
 
-#use Getopt::Long;
-use Data::Dumper;
-$Data::Dumper::Deparse=1;
-
 use Carp qw<croak carp>;
 
 our %seen;
@@ -34,10 +30,6 @@ sub import {
 		croak "Flat list or hash ref expected";
 	}
 	
-	
-	# Process each entry
-	# The keys of the hash are the full names of the constants to declare
-	# if now package is prefixed, they are added to the callers package
 	
 	my $caller=caller;
 	no strict "refs";
@@ -71,8 +63,6 @@ sub import {
 		my $wrapper= sub {
 			my  ($opt_name, $opt_value)=@_;
 
-			
-
 			return unless @_>=2;
 
 			my @results=&$sub;
@@ -93,11 +83,9 @@ sub import {
 		};
 
 
-		#if(!$success){
-			#Select a value 
-			$wrapper->("", $entry->{val});	#default
+		#Select a value 
+		$wrapper->("", $entry->{val});	#default
 			
-			#}
 
 		#CMD line argument override
 		if($entry->{opt}){	
@@ -117,21 +105,11 @@ sub import {
 				$wrapper->($ENV{$entry->{env}});
 			}
 		}
-
-                ####################################################
-                # if(!$success){                                   #
-                #         #Select a value                          #
-                #         $wrapper->("", $entry->{val});  #default #
-                #                                                  #
-                # }                                                #
-                ####################################################
 	}
 
 			#Actually
 			#Create the constants
 			while(my($name,$val)=each %table){
-				#my $val=$pair->[1];
-				#my $name=$pair->[0];
 				#check where to install the constant
 				unless($seen{$name}){
 					#Define
@@ -140,17 +118,7 @@ sub import {
 					next;
 
 				}
-
-                                #####################################################
-                                # #Attempt to locate an existing constant           #
-                                # if( $seen{$name} and $entry->{force}){            #
-                                #         #                                         #
-                                #         *{$name}=sub (){$val} if $entry->{force}; #
-                                #         next;                                     #
-                                # }                                                 #
-                                #####################################################
 				else {
-					#carp "Definition found for $name but not using new value\n";
 					next;
 				}
 			}
