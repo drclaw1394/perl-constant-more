@@ -32,14 +32,14 @@ to constants declared in your code
 
 	use constant::more {
 		FEATURE_A_ENABLED=>{		#Name of the constant
-			value=>0,		#default value 
-			option=>"feature1",	#Getopt::Long option specification
+			val=>0,		#default value 
+			opt=>"feature1",	#Getopt::Long option specification
 			env=>"MY_APP_FEATURE_A"	#Environment variable copy value from 
 		},
 
 		FEATURE_B_CONFIG=>{
-			value=>"disabled",
-			option=>"feature2=s",	#Getopt::Long format
+			val=>"disabled",
+			opt=>"feature2=s",	#Getopt::Long format
 		}
 	};
 
@@ -70,8 +70,8 @@ to constants declared in your code
 =head1 DESCRIPTION
 
 Performs the similar tasks as C<use constant>, but adds the facility to set
-the value of declared constants with values from the command line or
-environment variables.
+the value of constants with values from the command line or environment
+variables.
 
 
 
@@ -92,7 +92,7 @@ It is quite common to see something like this:
 	}
 
 This enables debug code using an evironment variable. This module implements a
-similar idea but can use command line options using L<GetOpt::Long>
+similar idea but can process command line options using L<GetOpt::Long>
 
 
 =head1 USAGE
@@ -148,14 +148,33 @@ command option will be used
 
 =head2 Advanced Form
 
-If the child, annonymous hash contains the key C<sub>, then the return list of
-the the subroutine will be used as key value pairs of contant names and values
-to genereate. This sub is called with a key, value pair from the default
-setting, command line processing or evironment variable.
 
-The first input argument is the name of the command line option, or undef if
-default or environment variable.  The second argument is the value from the
-command line option, default or environment variable.
+If the child, annonymous hash contains CODE reference in the field C<sub>, top level keys in the hash are only used as labels and not as a constant name.
+The actual constant names and values to be generated are returned as a key value list from the CODE ref. 
+
+The CODE ref is called with a key value pair. The first input argument is the
+name of the command line option, or undef if default or environment variable.
+The second argument is the value from the command line option, default or
+environment variable.
+
+	use constant::more {
+		MY_NAME=>{
+			val=>"john",
+			opt=>"name=s",
+			env=>"ENV_VAR_NAME",
+			sub=>sub{
+				my ($key,$value)=@_;
+				state $i=0;
+				$i++;
+			
+			}
+		},
+	};
+
+The code ref may be called multiple times if command line processing is enabled
+(with the C<opt> field). The names and values returned can be different each
+time for advanced use cases.
+
 
 
 

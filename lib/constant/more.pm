@@ -4,7 +4,7 @@ use version; our $VERSION=version->declare("v0.1.0");
 use strict;
 use warnings;
 
-use feature qw<refaliasing state>;
+use feature qw<state>;
 no warnings "experimental";
 use List::Util qw<pairs>;
 
