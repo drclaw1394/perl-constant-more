@@ -1,6 +1,7 @@
-Revision history for Perl extension Dandy.
 
-0.01  Sat Mar  5 22:10:57 2022
-	- original version; created by h2xs 1.23 with options
-		-X -P --name Dandy
+0.1.0   Thu 14 Apr 2022 21:34:36 AEST
+        - First version
+        - Supports command line options
+        - Supports Environment variables
+        - User sub for advanced configuration
 

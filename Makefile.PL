@@ -7,6 +7,7 @@ WriteMakefile(
 	ABSTRACT_FROM     => 'lib/constant/more.pod',
 	AUTHOR            => 'Ruben Westerberg <drclaw@mac.com>',
 	LICENSE           => 'mit',
+	MIN_PERL_VERSION  => 'v5.24',
 	META_ADD => {
 		"meta-spec" => {
 			version => 2
@@ -15,7 +16,7 @@ WriteMakefile(
 			repository =>{
 				type => "git",
 				url => "git://github.com/drclaw1394/perl-constant-more.git",
-				web => "http://github.com/drclaw1394/perl-constant-more",
+				web => "https://github.com/drclaw1394/perl-constant-more",
 			}
 		}
 	}
