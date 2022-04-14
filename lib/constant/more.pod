@@ -69,37 +69,66 @@ to constants declared in your code
 
 =head1 DESCRIPTION
 
-Performs the similar tasks as C<use constant>, but adds the facility to set
-the value of constants with values from the command line or environment
-variables.
+Performs the similar tasks as C<use constant>, but adds features to set
+values of constants from the command line or environment variables.
 
+In addition, constants are only defined/set if they don't exist already, making
+configuring and overriding sub modules value possible. A module can specify a
+default value which is used if the constant hasn't been defined by the top
+level script. 
 
+L<GetOpt::Long> option specification is used for processing command line
+options to give flexibility in how and what switches are used.  To save on
+memory, L<GetOpt::Long> is only loaded if option processing is wanted (i.e. the
+C<opt> field is specified).
+
+In advanced form, a user subroutine can be specified which gives great control
+of processing. This is used by L<Log::OK> for example to generate multiple
+constants from a single input level.
 
 =head1 MOTIVATION
 
-I use the C<constant> and C<enum> pragma alot for unchanging values in my code.
+I use the C<constant> and C<enum> pragma a lot for unchanging values in my code.
 However, I would like to have the flexibility to configure constants at program
-start to enable debuging for example.
+start to enable debugging or platform specific code while gaining the
+performance benefits possible when using constants in conditional structures.
 
-It is quite common to see something like this:
-
-	package My::Complex::Package
-
-	use constant DEBUG=>$ENV{"my_complex_package_debug"}//0;
-
-	if(DEBUG){
-		warn "debugging";
-	}
-
-This enables debug code using an evironment variable. This module implements a
-similar idea but can process command line options using L<GetOpt::Long>
-
+This module started as a way of disabling logging. However goals changed and I
+made it more general purpose. I wrote another module C<Log::OK> for to handle
+disabling of unwanted logging statements. It uses this module under the hood.
 
 =head1 USAGE
 
+=head2 Implementation Details
+
+It is important to C<use constant::more> before using other modules that also
+C<use constant::more> to ensure that you can manipulate constant values.
+Otherwise you risk sub modules overriding your top level applications logic
+
+Constants are defined in a callers name space unless the name (hash key)
+includes a package.  A name with '::' in it is classed as a full name for a
+variable. Use this to declare constants in a common namespace for example.
+
+In the case of the C<val> field, command line option and environment variable
+all being present simultaneously, the precedence of a constant's value is:
+command option, environment variable and lastly the C<val> field.
+
+
+Constant names and their values are set in a table (hash) before they are
+actually created. In the case of the Advanced Form usage  (see below), a
+constant can have its value updated multiple times, or multiple constants
+generated from the same command line option and added to the table.  When
+processing is complete all entries in the table are created.
+
+
+
+The usage of the pragma takes three forms, depending on how you want to set the
+value of your constants. These are detailed in the following sections.
+
 =head2 Simple Form
 
-In its simplest form, defining an constant is just like the C<use constant> pragma:
+In its simplest form, defining an constant (or multiple) is just like the 
+C<use constant> pragma:
 
 	use constant::more NAME=>"value";	#Set a single constant
 		
@@ -108,10 +137,14 @@ In its simplest form, defining an constant is just like the C<use constant> prag
 			ANOTHER=>"one",
 	};
 
+
+The key of the hash becomes the name of the constant. 
+
 =head2 Normal Form
 
-In its full form, an annonyous hash containing keys C<val>, C<opt>, C<env> and
-C<sub> are used to setup the processing of a constant:
+In its normal form, one or more anonymous hashes containing keys C<val>,
+C<opt>, C<env>, C<keep> and C<sub> are used to setup the processing of a
+constant:
 
 	use constant::more {
 		MY_NAME=>{
@@ -124,36 +157,47 @@ C<sub> are used to setup the processing of a constant:
 		}
 	};
 
+The keys used for each anonymous hash is the name of the constant created (MY_NAME and ANOTHER from above).
 
-The general form of usage is showin in the Disccusion section. However here are the fine details
+The field values  are all optional and include:
 
-Constants are defined in callers name space unless name includes a package in the name
-A name with '::' in it is classed as a full name for a variable. Use this to
-declare constants in a common namespace (ie CONFIG for example)
+=head3 val
 
-Constants are only defined/set if they don't exist already.This makes
-configuring constants in sub moudles possible. The module can specify a default
-value, if it hasn't been been defined by the top level application. This is why
-it is important to C<use constant::more> at the start of your file.
+The value set in code for the constant. If command line option or environment
+variable is used/detected, this will be the value of the constant. If not
+provided the value of constant generated will be C<undef>.
 
+=head3 opt
 
-Precedence of constant value is code, envrionment then command option
+The L<GetOpt::Long> option specification to use in processing the command line.
+If not specified, no command line processing is performed and L<GetOpt::Long>
+in not loaded.
 
-This means the value (default) specified in code will be only used if no
-environment variable or command option is applicable.
+=head3 env
 
-If a command option is provided and a environment variable is available, the
-command option will be used
+The name of the environment variable use in setting the constant's value. If
+not provided, environment variables are not inspected.
+
+=head3 keep
+
+A flag indicating if the C<@ARGV> should be left as is (to keep) or  consumed
+with processing command line options. If not specified C<@ARGV> will have
+options consumed and only remaining options passed through
+
 
 
 =head2 Advanced Form
 
+Advanced form has an additional field C<sub> which changes behaviour of the pragma dramatically.
 
-If the child, annonymous hash contains CODE reference in the field C<sub>, top level keys in the hash are only used as labels and not as a constant name.
-The actual constant names and values to be generated are returned as a key value list from the CODE ref. 
+If the child, anonymous hash contains CODE reference in the field C<sub>, top
+level keys in the hash B<NOT> use as a constant names, but only as a label.
 
-The CODE ref is called with a key value pair. The first input argument is the
+The actual constant names and values to be generated are returned as a key/value list from the CODE ref. 
+
+The CODE ref is called with a key/value pair. The first input argument is the
 name of the command line option, or undef if default or environment variable.
+
 The second argument is the value from the command line option, default or
 environment variable.
 
@@ -172,25 +216,33 @@ environment variable.
 	};
 
 The code ref may be called multiple times if command line processing is enabled
-(with the C<opt> field). The names and values returned can be different each
-time for advanced use cases.
+(with the C<opt> field). If multiple matching switches are present on the
+command line, they are each passed in a call.
 
 
+The names and values returned can be different each time for advanced use
+cases.
 
+=head1 REPOSITOTY and BUGS
 
+Please report and feature requests and bugs via the github repo:
 
-=head1 BUGS
-
-=head1 REPOSITORY
-
-=head1 LICENSE
+L<git://github.com/drclaw1394/perl-constant-more.git>
 
 =head1 AUTHOR
 
-=head1 RELATED MODULES
+Ruben Westerberg, E<lt>drclaw@mac.comE<gt>
 
-L<Getopt::constant>
+=head1 COPYRIGHT AND LICENSE
 
-=head1 COPYRIGHT
+Copyright (C) 2022 by Ruben Westerberg
 
+Licensed under MIT
 
+=head1 DISCLAIMER OF WARRANTIES
+
+THIS PACKAGE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES,
+INCLUDING, WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
+FITNESS FOR A PARTICULAR PURPOSE.
+
+=cut

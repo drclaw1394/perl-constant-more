@@ -47,7 +47,7 @@ sub import {
 		}
 		else {
 			#assumed a short cut, just name and value
-			$entry={val=>$flags->{$name}, force=>undef,opt=>undef, env=>undef};
+			$entry={val=>$flags->{$name}, keep=>undef, opt=>undef, env=>undef};
 		}
 
 		#Default sub is to return the key value pair
@@ -90,13 +90,23 @@ sub import {
 		#CMD line argument override
 		if($entry->{opt}){	
 			require Getopt::Long;
-			my $parser=Getopt::Long::Parser->new(
-				config=>[
-					"pass_through"
-				]
-			);
-			#TODO: test the type char of options spec to ensure $value is the same
-			$parser->getoptions( $entry->{opt}, $wrapper) or die "Invalid options";
+			if($entry->{keep}){
+				my $parser=Getopt::Long::Parser->new();
+				
+				my @array=@ARGV; #copy
+				$parser->getoptionsfromarray(\@array, $entry->{opt}, $wrapper) or die "Invalid options";
+
+
+			}
+			else{
+				my $parser=Getopt::Long::Parser->new(
+					config=>[
+						"pass_through"
+					]
+				);
+				$parser->getoptions( $entry->{opt}, $wrapper) or die "Invalid options";
+
+			}
 		}
 
 		if(!$success and $entry->{env}){
