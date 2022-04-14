@@ -1,12 +1,14 @@
 Changes
-examples/log-level.pl
-examples/log4perl.pl
-examples/log_ger.pl
 lib/constant/more.pm
 lib/constant/more.pod
 Makefile.PL
-MANIFEST
+MANIFEST			This list of files
 MANIFEST.SKIP
 README
 README.md
 t/00-constant-more.t
+t/01-cmd.t
+t/01-consume.t.p
+t/01-keep.t.p
+t/01-sub.t.p
+t/01-sub2.t.p
