@@ -6,13 +6,9 @@ use warnings;
 
 #use feature qw<state>;
 no warnings "experimental";
-#use List::Util qw<pairs>;
-
-#use Carp qw<croak carp>;
 
 our %seen;
 
-#use Exporter;
 sub import {
 
 	my $package =shift;
@@ -79,7 +75,6 @@ sub import {
 				}
         #Only configure contant for addition if it doesn't exist
         #in target namespace
-        #say STDERR *{$name}{CODE};
 				$table{$name}=$value unless(*{$name}{CODE})
 			}
 
