@@ -1,18 +1,18 @@
 package constant::more;
 
-use version; our $VERSION=version->declare("v0.1.2");
+use version; our $VERSION=version->declare("v0.2.0");
 use strict;
 use warnings;
 
-use feature qw<state>;
+#use feature qw<state>;
 no warnings "experimental";
-use List::Util qw<pairs>;
+#use List::Util qw<pairs>;
 
-use Carp qw<croak carp>;
+#use Carp qw<croak carp>;
 
 our %seen;
 
-use Exporter;
+#use Exporter;
 sub import {
 
 	my $package =shift;
@@ -27,7 +27,7 @@ sub import {
 		$flags={$_[0]=>$_[1]};
 	}
 	else {
-		croak "Flat list or hash ref expected";
+    die "Flat list or hash ref expected";
 	}
 	
 	
@@ -69,7 +69,9 @@ sub import {
 
 
 			#set values in the table
-			for my $pair (pairs @results){
+      my $i=0;
+      while($i<@results){
+        my $pair =[$results[$i++], $results[$i++]];
 				my $value=$pair->[1];
 				my $name=$pair->[0];
 				unless($name=~/::/){
@@ -120,11 +122,11 @@ sub import {
 		}
 	}
 
-			#Actually
-			#Create the constants
-      while(my($name,$val)=each %table){
-        *{$name}=sub (){$val} 
-      }
+  #Actually
+  #Create the constants
+  while(my($name,$val)=each %table){
+    *{$name}=sub (){$val} 
+  }
 }
 
 1;
